@@ -1,4 +1,7 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using WebApplication1;
+using WebApplication1.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +13,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Logging.AddConsole();
 
+
+builder.Services.Configure<RabbitMqConfiguration>(a => builder.Configuration.GetSection(nameof(RabbitMqConfiguration)).Bind(a));
+builder.Services.AddSingleton<IMessenger, RabbitMqMessenger>();
+
 builder.Services.AddHostedService<Receiver>();
+builder.Services.AddDbContext<NewsContext>(options => 
+    options.UseNpgsql(builder.Configuration.GetConnectionString("WebApiDatabase")));
 
 var app = builder.Build();
 

@@ -1,61 +1,32 @@
-﻿using RabbitMQ.Client;
-using RabbitMQ.Client.Events;
-using System.Text;
-using System.Text.Json;
+﻿using WebApplication1.Messaging;
 
 namespace WebApplication1
 {
     public class Receiver : BackgroundService
     {
+        IMessenger _messenger;
+        public Receiver(IMessenger messenger)
+        {
+            _messenger = messenger;
+        }
+
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                TestReceive();
-                Console.WriteLine("test");
-                await Task.Delay(1000, stoppingToken);
-            }
-        }
-
-        private void TestReceive()
-        {
-            var factory = new ConnectionFactory { 
-                HostName = "172.19.0.3",
-                //Port = 5672,
-                Port = 5672,
-                UserName = "guest", 
-                Password = "guest", 
-                VirtualHost="/"
-            };
-            using var connection = factory.CreateConnection();
-            using var channel = connection.CreateModel();
-
-            channel.QueueDeclare(queue: "hello",
-                                 durable: false,
-                                 exclusive: false,
-                                 autoDelete: false,
-                                 arguments: null);
-
-            Console.WriteLine(" [*] Waiting for messages.");
-
-            var consumer = new EventingBasicConsumer(channel);
-            consumer.Received += (model, ea) =>
-            {
-                var body = ea.Body.ToArray();
-                var message = Encoding.UTF8.GetString(body);
-                var tmp = JsonSerializer.Deserialize<ComputationResponse>(message);
-                if (tmp != null)
+                var message = _messenger.ReceiveJson();
+                if (message != null && (message is Message))
                 {
-                    Console.WriteLine($" [x] Received {tmp.input_value} {tmp.previous_value}, {tmp.computed_value}");
+                    var typedMessage = (Message)message;
+                    Console.WriteLine($"{typedMessage.input_value} {typedMessage.computed_value} {typedMessage.previous_value}");
                 }
                 else
                 {
-                    Console.WriteLine("null received");
+                    Console.WriteLine($"Received null object");
                 }
-            };
-            channel.BasicConsume(queue: "hello",
-                                 autoAck: true,
-                                 consumer: consumer);
+                await Task.Delay(1000, stoppingToken);
+            }
         }
     }
 }

@@ -2,75 +2,71 @@
 using RabbitMQ.Client;
 using System.Text;
 using System.Text.Json;
+using WebApplication1.Messaging;
 
 namespace WebApplication1.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class Calculations : ControllerBase
+    public class Home : ControllerBase
     {
-        [HttpPost(Name = "Calculation")]
-        public ComputationResponse Calculation(int key)
+        private IMessenger _messenger;
+        const int DEFAULT_VALUE = 2;
+        const int MAX_LIFE_SECONDS = 15;
+
+        public Home(IMessenger messenger)
         {
-            var tmp = HandleInput(key);
-            TestSend(tmp);
-            return tmp;
+            _messenger = messenger;
         }
 
-        private ComputationResponse HandleInput(int input)
+        [HttpPost(Name = "Calculation")]
+        public void Calculation([FromBody] decimal input, int key)
         {
-            if (!GlobalStorage.Storage.ContainsKey(input))
+            var calculationOutput = HandleIncomingData(key, input);
+            _messenger.SendAsJson(new Message(input, calculationOutput.PreviousValue, calculationOutput.ComputedValue));
+        }
+
+        private CalculationOutput HandleIncomingData(int key, decimal input)
+        {
+            var computedValue = ComputeValue(key, input);
+            var previousValue = AddOrUpdateStorage(key, computedValue);
+            return new CalculationOutput(computedValue, previousValue);
+        }
+
+        private decimal? AddOrUpdateStorage(int key, decimal value)
+        {
+            decimal? previousValue;
+            if (!GlobalKeyValueStorage.Storage.ContainsKey(key))
             {
-                var complexValue = new ComplexValue() { Value = 2, TimeStamp = DateTime.Now };
-                GlobalStorage.Storage.Add(input, complexValue);
-                return new ComputationResponse(input, null, complexValue.Value);
-            }
-            else if (GlobalStorage.Storage.ContainsKey(input) && GlobalStorage.Storage[input].TimeStamp > DateTime.Now.AddSeconds(-15))
-            {
-                var complexValue = new ComplexValue() { Value = 2, TimeStamp = DateTime.Now };
-                GlobalStorage.Storage[input] = complexValue;
-                return new ComputationResponse(input, null, complexValue.Value);
+                previousValue = null;
+                GlobalKeyValueStorage.Storage.Add(key, new ComplexValue() { Value = value, TimeStamp = DateTime.Now });
             }
             else
             {
-                var originalValue = GlobalStorage.Storage[input].Value;
-                decimal inputValue = input / originalValue;
-                inputValue = (decimal)Math.Log((double)inputValue);
-                inputValue = (decimal)Math.Cbrt((double)inputValue);
-                var complexValue = new ComplexValue() { Value = inputValue, TimeStamp = DateTime.Now };
-                GlobalStorage.Storage[input] = complexValue;
-                return new ComputationResponse(input, originalValue, complexValue.Value);
+                previousValue = GlobalKeyValueStorage.Storage[key].Value;
+                GlobalKeyValueStorage.Storage[key] = new ComplexValue() { Value = value, TimeStamp = DateTime.Now };
             }
+            return previousValue;
         }
 
-
-        private void TestSend(ComputationResponse computationResponse)
+        private decimal ComputeValue(int key, decimal input)
         {
-            var factory = new ConnectionFactory { 
-                HostName = "172.19.0.3",
-                //Port = 5672,
-                Port = 5672,
-                UserName = "guest", 
-                Password = "guest", 
-                VirtualHost = "/"
-            };
-            using var connection = factory.CreateConnection();
-            using var channel = connection.CreateModel();
-
-            channel.QueueDeclare(queue: "hello",
-                                 durable: false,
-                                 exclusive: false,
-                                 autoDelete: false,
-                                 arguments: null);
-
-            string message = JsonSerializer.Serialize(computationResponse);
-            var body = Encoding.UTF8.GetBytes(message);
-
-            channel.BasicPublish(exchange: string.Empty,
-                                 routingKey: "hello",
-                                 basicProperties: null,
-                                 body: body);
-            Console.WriteLine($" [x] Sent {message}");
+            if (!GlobalKeyValueStorage.Storage.ContainsKey(key))
+            {
+                return DEFAULT_VALUE;
+            }
+            else if (GlobalKeyValueStorage.Storage.ContainsKey(key) && GlobalKeyValueStorage.Storage[key].TimeStamp < DateTime.Now.AddSeconds(-MAX_LIFE_SECONDS))
+            {
+                return DEFAULT_VALUE;
+            }
+            else
+            {
+                var previousValue = GlobalKeyValueStorage.Storage[key].Value;
+                double computedValue = (double)input / (double)previousValue;
+                computedValue = Math.Log(computedValue);
+                computedValue = Math.Cbrt(computedValue);
+                return (decimal)computedValue;
+            }
         }
     }
 }

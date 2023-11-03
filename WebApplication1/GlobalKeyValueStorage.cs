@@ -6,7 +6,7 @@
         public DateTime TimeStamp { get; set; }
     }
 
-    public static class GlobalStorage
+    public static class GlobalKeyValueStorage
     {
         public static Dictionary<int, ComplexValue> Storage { get; set; } = new Dictionary<int, ComplexValue>();
     }
