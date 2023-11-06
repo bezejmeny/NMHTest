@@ -23,7 +23,7 @@ namespace WebApplication1
                 }
                 else
                 {
-                    Console.WriteLine($"Received null object");
+                    //Console.WriteLine($"Received null object");
                 }
                 await Task.Delay(1000, stoppingToken);
             }

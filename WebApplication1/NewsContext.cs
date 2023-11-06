@@ -12,20 +12,8 @@ namespace WebApplication1
         public DbSet<Author> Authors { get; set; }
         public DbSet<Site> Sites { get; set; }
 
-
-        //public string DbPath { get; }
-        //public NewsContext()
-        //{
-        //    var folder = Environment.SpecialFolder.LocalApplicationData;
-        //    var path = Environment.GetFolderPath(folder);
-        //    DbPath = System.IO.Path.Join(path, "news.db");
-        //}
-
         public NewsContext(DbContextOptions<NewsContext> options) : base(options)
         {
-            //var folder = Environment.SpecialFolder.LocalApplicationData;
-            //var path = Environment.GetFolderPath(folder);
-            //DbPath = System.IO.Path.Join(path, "news.db");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -63,8 +51,5 @@ namespace WebApplication1
             modelBuilder.Entity<Site>()
                 .HasKey(b => b.Id);
         }
-
-        //protected override void OnConfiguring(DbContextOptionsBuilder options)
-        //=> options.UseNpgsql($"Data Source={DbPath}");
     }
 }

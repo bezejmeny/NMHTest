@@ -1,7 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using RabbitMQ.Client;
-using System.Text;
-using System.Text.Json;
 using WebApplication1.Messaging;
 
 namespace WebApplication1.Controllers

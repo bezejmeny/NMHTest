@@ -35,6 +35,7 @@
       "environmentVariables": {
         "ASPNETCORE_URLS": "https://+:443;http://+:80"
       },
+      "DockerfileRunArguments": "--network=nmhtest_default",
       "publishAllPorts": true,
       "useSSL": true
     }

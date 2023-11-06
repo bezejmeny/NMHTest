@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 
@@ -24,8 +23,6 @@ namespace WebApplication1.Messaging
                 HostName = _configuration.HostName,
                 Port = 5672
             };
-            Debug.WriteLine($"Username: {_configuration.Username}, Password: {_configuration.Password}, Hostname: {_configuration.HostName}");
-            Console.WriteLine($"Username: {_configuration.Username}, Password: {_configuration.Password}, Hostname: {_configuration.HostName}");
             var channel = connection.CreateConnection();
             return channel;
         }
@@ -41,7 +38,7 @@ namespace WebApplication1.Messaging
                     string serializedObject = JsonSerializer.Serialize(data);
                     var body = Encoding.UTF8.GetBytes(serializedObject);
                     channel.BasicPublish(string.Empty, queue, null, body);
-                    Console.WriteLine($"Sent data");
+                    //Console.WriteLine($"Sent data");
                 }
             }
         }
@@ -54,7 +51,7 @@ namespace WebApplication1.Messaging
                 using (IModel channel = connection.CreateModel())
                 {
                     channel.QueueDeclare(queue, false, false, false, null);
-                    Console.WriteLine("Waiting for messages...");
+                    //Console.WriteLine("Waiting for messages...");
                     var consumer = new EventingBasicConsumer(channel);
                     consumer.Received += (model, ea) =>
                     {
@@ -65,7 +62,7 @@ namespace WebApplication1.Messaging
                             receivedObject = JsonSerializer.Deserialize<Message>(message);
                         }
 
-                        Console.WriteLine("Received data");
+                        //Console.WriteLine("Received data");
                     };
 
                     channel.BasicConsume(queue: queue,
