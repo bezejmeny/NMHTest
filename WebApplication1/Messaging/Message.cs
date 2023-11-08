@@ -6,15 +6,15 @@ namespace WebApplication1.Messaging
         {
         }
 
-        public Message(decimal inputValue, decimal? previousValue, decimal computedValue)
+        public Message(double inputValue, double? previousValue, double computedValue)
         {
             input_value = inputValue;
             previous_value = previousValue;
             computed_value = computedValue;
 
         }
-        public decimal computed_value { get; set; }
-        public decimal input_value { get; set; }
-        public decimal? previous_value { get; set; }
+        public double computed_value { get; set; }
+        public double input_value { get; set; }
+        public double? previous_value { get; set; }
     }
 }

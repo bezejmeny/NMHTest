@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Messaging;
+using WebApplication1.Model;
 
 namespace WebApplication1.Controllers
 {
@@ -17,22 +18,22 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost(Name = "Calculation")]
-        public void Calculation([FromBody] decimal input, int key)
+        public void Calculation([FromBody] double input, int key)
         {
             var calculationOutput = HandleIncomingData(key, input);
             _messenger.SendAsJson(new Message(input, calculationOutput.PreviousValue, calculationOutput.ComputedValue));
         }
 
-        private CalculationOutput HandleIncomingData(int key, decimal input)
+        private CalculationOutput HandleIncomingData(int key, double input)
         {
             var computedValue = ComputeValue(key, input);
             var previousValue = AddOrUpdateStorage(key, computedValue);
             return new CalculationOutput(computedValue, previousValue);
         }
 
-        private decimal? AddOrUpdateStorage(int key, decimal value)
+        private double? AddOrUpdateStorage(int key, double value)
         {
-            decimal? previousValue;
+            double? previousValue;
             if (!GlobalKeyValueStorage.Storage.ContainsKey(key))
             {
                 previousValue = null;
@@ -46,7 +47,7 @@ namespace WebApplication1.Controllers
             return previousValue;
         }
 
-        private decimal ComputeValue(int key, decimal input)
+        private double ComputeValue(int key, double input)
         {
             if (!GlobalKeyValueStorage.Storage.ContainsKey(key))
             {
@@ -59,10 +60,10 @@ namespace WebApplication1.Controllers
             else
             {
                 var previousValue = GlobalKeyValueStorage.Storage[key].Value;
-                double computedValue = (double)input / (double)previousValue;
+                double computedValue = input / previousValue;
                 computedValue = Math.Log(computedValue);
                 computedValue = Math.Cbrt(computedValue);
-                return (decimal)computedValue;
+                return computedValue;
             }
         }
     }

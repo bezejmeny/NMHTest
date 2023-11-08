@@ -2,12 +2,12 @@
 {
     public class CalculationOutput
     {
-        public CalculationOutput(decimal computedValue, decimal? previousValue) { 
+        public CalculationOutput(double computedValue, double? previousValue) { 
             ComputedValue = computedValue;
             PreviousValue = previousValue;
         }
 
-        public decimal ComputedValue { get; private set; }
-        public decimal? PreviousValue { get; private set; }
+        public double ComputedValue { get; private set; }
+        public double? PreviousValue { get; private set; }
     }
 }
