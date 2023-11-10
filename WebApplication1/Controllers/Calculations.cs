@@ -9,12 +9,14 @@ namespace WebApplication1.Controllers
     public class Home : ControllerBase
     {
         private IMessenger _messenger;
+        private IGlobalKeyValueStorage _storage;
         const int DEFAULT_VALUE = 2;
         const int MAX_LIFE_SECONDS = 15;
 
-        public Home(IMessenger messenger)
+        public Home(IMessenger messenger, IGlobalKeyValueStorage storage)
         {
             _messenger = messenger;
+            _storage = storage;
         }
 
         [HttpPost(Name = "Calculation")]
@@ -40,32 +42,32 @@ namespace WebApplication1.Controllers
         private double? AddOrUpdateStorage(int key, double value)
         {
             double? previousValue;
-            if (!GlobalKeyValueStorage.Storage.ContainsKey(key))
+            if (!_storage.ContainsKey(key))
             {
                 previousValue = null;
-                GlobalKeyValueStorage.Storage.Add(key, new ComplexValue() { Value = value, TimeStamp = DateTime.Now });
+                _storage.Add(key, new ComplexValue() { Value = value, TimeStamp = DateTime.Now });
             }
             else
             {
-                previousValue = GlobalKeyValueStorage.Storage[key].Value;
-                GlobalKeyValueStorage.Storage[key] = new ComplexValue() { Value = value, TimeStamp = DateTime.Now };
+                previousValue = _storage.Get(key).Value;
+                _storage.Update(key, new ComplexValue() { Value = value, TimeStamp = DateTime.Now });
             }
             return previousValue;
         }
 
         private double ComputeValue(int key, double input)
         {
-            if (!GlobalKeyValueStorage.Storage.ContainsKey(key))
+            if (!_storage.ContainsKey(key))
             {
                 return DEFAULT_VALUE;
             }
-            else if (GlobalKeyValueStorage.Storage.ContainsKey(key) && GlobalKeyValueStorage.Storage[key].TimeStamp < DateTime.Now.AddSeconds(-MAX_LIFE_SECONDS))
+            else if (_storage.ContainsKey(key) && _storage.Get(key).TimeStamp < DateTime.Now.AddSeconds(-MAX_LIFE_SECONDS))
             {
                 return DEFAULT_VALUE;
             }
             else
             {
-                var previousValue = GlobalKeyValueStorage.Storage[key].Value;
+                var previousValue = _storage.Get(key).Value;
                 double computedValue = input / previousValue;
                 computedValue = Math.Log(computedValue);
                 computedValue = Math.Cbrt(computedValue);

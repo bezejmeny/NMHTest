@@ -12,7 +12,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Logging.AddConsole();
 
-
+builder.Services.AddSingleton<IGlobalKeyValueStorage, GlobalKeyValueStorage>();
 builder.Services.Configure<RabbitMqConfiguration>(a => builder.Configuration.GetSection(nameof(RabbitMqConfiguration)).Bind(a));
 builder.Services.AddSingleton<IMessenger, RabbitMqMessenger>();
 
