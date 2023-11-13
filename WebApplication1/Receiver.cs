@@ -28,8 +28,16 @@ namespace WebApplication1
 
         public override void Dispose()
         {
-            _channel.Close();
-            _connection.Close();
+            if (_channel != null)
+            {
+                _channel.Close();
+            }
+
+            if (_connection != null)
+            {
+                _connection.Close();
+            }
+
             base.Dispose();
         }
     }
