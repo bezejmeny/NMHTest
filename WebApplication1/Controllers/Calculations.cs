@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 using WebApplication1.Messaging;
 using WebApplication1.Model.Calculations;
 
@@ -20,7 +21,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost(Name = "Calculation")]
-        public IActionResult Calculation([FromBody] PostValue value, int key)
+        public IActionResult Calculation([FromBody] PostValue value, [Required(ErrorMessage = "Non null key has to be provided")][FromRoute]int key)
         {
             if(!ModelState.IsValid)
             {
