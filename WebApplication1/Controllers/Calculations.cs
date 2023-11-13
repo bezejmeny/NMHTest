@@ -21,7 +21,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost(Name = "Calculation")]
-        public IActionResult Calculation([FromBody] PostValue value, [Required(ErrorMessage = "Non null key has to be provided")][FromRoute]int key)
+        public IActionResult Calculation([FromBody] PostValue value, [Required(ErrorMessage = "Non null key has to be provided")]int key)
         {
             if(!ModelState.IsValid)
             {
