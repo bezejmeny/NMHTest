@@ -29,15 +29,15 @@ namespace WebApplication1.Controllers
                 return new JsonResult(new { Errors = ModelState.Values.SelectMany(x => x.Errors).Select(y => y.ErrorMessage) });
             }
             var calculationOutput = HandleIncomingData(key, value.Input);
-            _messenger.SendAsJson(new Message(value.Input, calculationOutput.PreviousValue, calculationOutput.ComputedValue));
+            _messenger.SendAsJson(new Message(value.Input, calculationOutput.Item2, calculationOutput.Item1));
             return Ok();
         }
 
-        private CalculationOutput HandleIncomingData(int key, double input)
+        private Tuple<double, double?> HandleIncomingData(int key, double input)
         {
             var computedValue = ComputeValue(key, input);
             var previousValue = AddOrUpdateStorage(key, computedValue);
-            return new CalculationOutput(computedValue, previousValue);
+            return new Tuple<double, double?>(computedValue, previousValue);
         }
 
         private double? AddOrUpdateStorage(int key, double value)
