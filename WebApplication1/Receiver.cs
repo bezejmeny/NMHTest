@@ -1,13 +1,19 @@
-﻿using WebApplication1.Messaging;
+﻿using Microsoft.Extensions.Options;
+using RabbitMQ.Client;
+using WebApplication1.Messaging;
 
 namespace WebApplication1
 {
     public class Receiver : BackgroundService
     {
-        IMessenger _messenger;
-        public Receiver(IMessenger messenger)
+        private IConnection _connection;
+        private IModel _channel;
+        private RabbitMqConfiguration _configuration;
+        public Receiver(IOptions<RabbitMqConfiguration> options)
         {
-            _messenger = messenger;
+            _configuration = options.Value;
+            _connection = RabbitMqMessenger.CreateConnection(_configuration);
+            _channel = _connection.CreateModel();
         }
 
 
@@ -15,18 +21,16 @@ namespace WebApplication1
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                var message = _messenger.ReceiveJson();
-                if (message != null && (message is Message))
-                {
-                    var typedMessage = (Message)message;
-                    Console.WriteLine($"{typedMessage.input_value} {typedMessage.computed_value} {typedMessage.previous_value}");
-                }
-                else
-                {
-                    //Console.WriteLine($"Received null object");
-                }
+                RabbitMqMessenger.ReceiveJson(_configuration.QueueName, _channel);
                 await Task.Delay(1000, stoppingToken);
             }
+        }
+
+        public override void Dispose()
+        {
+            _channel.Close();
+            _connection.Close();
+            base.Dispose();
         }
     }
 }

@@ -9,12 +9,28 @@ namespace WebApplication1.Messaging
     public class RabbitMqMessenger : IMessenger
     {
         private readonly RabbitMqConfiguration _configuration;
+
         public RabbitMqMessenger(IOptions<RabbitMqConfiguration> options)
         {
             _configuration = options.Value;
         }
 
-        public IConnection CreateChannel()
+        public void SendAsJson(object data)
+        {
+            using (IConnection connection = CreateConnection(_configuration))
+            {
+                using (IModel channel = connection.CreateModel())
+                {
+                    channel.QueueDeclare(_configuration.QueueName, false, false, false, null);
+
+                    string serializedObject = JsonSerializer.Serialize(data);
+                    var body = Encoding.UTF8.GetBytes(serializedObject);
+                    channel.BasicPublish(string.Empty, _configuration.QueueName, null, body);
+                }
+            }
+        }
+
+        public static IConnection CreateConnection(RabbitMqConfiguration _configuration)
         {
             ConnectionFactory connection = new()
             {
@@ -27,51 +43,23 @@ namespace WebApplication1.Messaging
             return channel;
         }
 
-        public void SendAsJson(object data, string queue = "defaultQueue")
+        public static void ReceiveJson(string queueName, IModel channel)
         {
-            using (IConnection connection = CreateChannel())
+            channel.QueueDeclare(queueName, false, false, false, null);
+            var consumer = new EventingBasicConsumer(channel);
+            consumer.Received += (model, ea) =>
             {
-                using (IModel channel = connection.CreateModel())
+                var body = ea.Body.ToArray();
+                var message = Encoding.UTF8.GetString(body);
+                if (!string.IsNullOrWhiteSpace(message))
                 {
-                    channel.QueueDeclare(queue, false, false, false, null);
-
-                    string serializedObject = JsonSerializer.Serialize(data);
-                    var body = Encoding.UTF8.GetBytes(serializedObject);
-                    channel.BasicPublish(string.Empty, queue, null, body);
-                    //Console.WriteLine($"Sent data");
+                    var tmp = JsonSerializer.Deserialize<Message>(message);
+                    Console.WriteLine($"{tmp?.input_value} {tmp?.computed_value} {tmp?.previous_value}");
                 }
-            }
-        }
-
-        public object? ReceiveJson(string queue = "defaultQueue")
-        {
-            object? receivedObject = null;
-            using (IConnection connection = CreateChannel())
-            {
-                using (IModel channel = connection.CreateModel())
-                {
-                    channel.QueueDeclare(queue, false, false, false, null);
-                    //Console.WriteLine("Waiting for messages...");
-                    var consumer = new EventingBasicConsumer(channel);
-                    consumer.Received += (model, ea) =>
-                    {
-                        var body = ea.Body.ToArray();
-                        var message = Encoding.UTF8.GetString(body);
-                        if (!string.IsNullOrWhiteSpace(message))
-                        {
-                            receivedObject = JsonSerializer.Deserialize<Message>(message);
-                        }
-
-                        //Console.WriteLine("Received data");
-                    };
-
-                    channel.BasicConsume(queue: queue,
-                        autoAck: true,
-                        consumer: consumer);
-                }
-            }
-
-            return receivedObject;
+            };
+            channel.BasicConsume(queue: queueName,
+            autoAck: true,
+            consumer: consumer);
         }
     }
 }

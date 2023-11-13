@@ -20,14 +20,14 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost(Name = "Calculation")]
-        public IActionResult Calculation([FromBody] PostValue value, [FromQuery] QueryValue key)
+        public IActionResult Calculation([FromBody] PostValue value, int key)
         {
             if(!ModelState.IsValid)
             {
                 Response.StatusCode = StatusCodes.Status400BadRequest;
                 return new JsonResult(new { Errors = ModelState.Values.SelectMany(x => x.Errors).Select(y => y.ErrorMessage) });
             }
-            var calculationOutput = HandleIncomingData(key.Key, value.Input);
+            var calculationOutput = HandleIncomingData(key, value.Input);
             _messenger.SendAsJson(new Message(value.Input, calculationOutput.PreviousValue, calculationOutput.ComputedValue));
             return Ok();
         }

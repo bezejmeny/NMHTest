@@ -13,9 +13,9 @@ builder.Services.AddSwaggerGen();
 builder.Logging.AddConsole();
 
 builder.Services.AddSingleton<IGlobalKeyValueStorage, GlobalKeyValueStorage>();
-builder.Services.Configure<RabbitMqConfiguration>(a => builder.Configuration.GetSection(nameof(RabbitMqConfiguration)).Bind(a));
+builder.Services.Configure<RabbitMqConfiguration>(
+    a => builder.Configuration.GetSection(nameof(RabbitMqConfiguration)).Bind(a));
 builder.Services.AddSingleton<IMessenger, RabbitMqMessenger>();
-
 builder.Services.AddHostedService<Receiver>();
 builder.Services.AddDbContext<NewsContext>(options => 
     options.UseNpgsql(builder.Configuration.GetConnectionString("WebApiDatabase")));
